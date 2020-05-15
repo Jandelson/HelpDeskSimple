@@ -6,7 +6,7 @@ class ChamadoModel extends CI_Model
 {
     public $id_chamado;
     public $where;
-    public $table;
+    public $table = "chamado";
     /**
      * Consulta das pendencias.
      *

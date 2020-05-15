@@ -30,7 +30,7 @@ class MY_Controller extends CI_Controller
         /**
          * Retorna where permissão se pode ou não ver todos os chamados
          */
-        $data['dados'] = $this->chamados->getChamados(0, $this->idusu, numRegister4PagePaginate(), $page, $where);
+        $data['dados'] = $this->chamados->getChamados(0, $this->idusu, numRegister4PagePaginate(), $page, $this->retornaPermissao());
         $data['paginacao'] = createPaginate('home/index', $this->chamados->contador());
         $data['status'] = $this->chamados->getChamadosStatus(
             0,
