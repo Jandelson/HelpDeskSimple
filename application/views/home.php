@@ -1,6 +1,6 @@
 ﻿<?php $this->load->view('header');?>
 <div id="main" class="container-fluid" style="margin-top: 50px">
-<h5>Empresa (<?php echo $agente[0]->nome;?>)</h5>
+<h5>Empresa (<?php echo $cliente[0]->nome;?>)</h5>
      <div id="top" class="row">
         <div class="col-sm-3">
             <h2>Tickets - <?php echo $this->session->userdata('nomusu')?></h2>

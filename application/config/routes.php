@@ -51,17 +51,16 @@ defined('BASEPATH') or exit('No direct script access allowed');
 */
 //endregion
 
-$route['default_controller'] = 'home';
-$route['visualizar/(:any)'] = 'home/visualizar';
-$route['editar/(:any)'] = 'home/editar';
-$route['inserir'] = 'home/inserir';
-$route['salvar'] = 'home/salvar';
-$route['resposta'] = 'home/resposta';
-$route['finalizar/(:any)'] = 'home/finalizar';
-$route['concluir/(:any)'] = 'home/concluir';
-$route['login/(:any)/(:any)/(:any)/(:any)'] = 'home/login/$1/$2/$3/$4';
-$route['login/(:any)/(:any)/(:any)/(:any)/(:any)'] = 'home/login/$1/$2/$3/$4/$5';
-$route['login/(:any)/(:any)/(:any)/(:any)/(:any)/(:any)'] = 'home/login/$1/$2/$3/$4/$5/$6';
+$route['default_controller'] = 'login';
+$route['home'] = 'home';
+$route['logn'] = 'login';
+$route['visualizar/(:any)'] = 'chamado/visualizar';
+$route['editar/(:any)'] = 'chamado/editar';
+$route['inserir'] = 'chamado/inserir';
+$route['salvar'] = 'chamado/salvar';
+$route['resposta'] = 'chamado/resposta';
+$route['finalizar/(:any)'] = 'chamado/finalizar';
+$route['concluir/(:any)'] = 'chamado/concluir';
 /**
  * Chama o controlador Login
  */

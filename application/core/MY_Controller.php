@@ -8,13 +8,20 @@ class MY_Controller extends CI_Controller
     {
         parent::__construct();
         $this->LoadModels();
+        $this->load->library('form_validation');
+        $this->load->helper('form');
     }
 
     public function indexController()
     {
-        $this->idusu = $this->retornaIDU();
+        $this->idusu = $this->session->userdata('idusu');
         $data['title'] = $this->title;
-        $data['agente'] = $this->clientes->getCliente($this->session->userdata('cgc_cpf'));
+        $data['cliente'] = $this->clientes->getCliente($this->session->userdata('cgc_cpf'));
+        $data['error'] = '';
+        if (empty($data['cliente'])) {
+            $data['formErrors'] = 'Usuário não encontrado!';
+            return $this->load->view('/login/login', $data);
+        }
         /**
          * Load helper de paginação
          */
@@ -23,88 +30,33 @@ class MY_Controller extends CI_Controller
         /**
          * Retorna where permissão se pode ou não ver todos os chamados
          */
-        $where = $this->getWherePermissao();
         $data['dados'] = $this->chamados->getChamados(0, $this->idusu, numRegister4PagePaginate(), $page, $where);
         $data['paginacao'] = createPaginate('home/index', $this->chamados->contador());
-        $data['status'] = $this->chamados->getChamadosStatus(0, $this->idusu, $where);
-        $this->analisaCorStatus($data['dados']);
+        $data['status'] = $this->chamados->getChamadosStatus(
+            0,
+            $this->idusu,
+            $this->retornaPermissao()
+        );
 
-        if (empty($data['agente'])) {
-           $this->load->view('/errors/helpdesk/erro_login', $data);
-        } else {
-            $this->load->view('home', $data);
-        }
+        $this->chamados->getCorStatus($data['dados']);
+        $this->load->view('home', $data);
     }
 
-    /**
-     * Retorna IDU id unica dao usuário.
-     */
-    public function retornaIDU()
-    {
-        $identificacao = md5($this->session->userdata('cgc_cpf') . $this->session->userdata('email'));
-        if ($this->session->userdata('userid') <> 0) {
-            $identificacao = md5($this->session->userdata('cgc_cpf') . $this->session->userdata('userid'));
-        }
-        return $identificacao;
-    }
-
-    /**
-     * analisa Cores dos status
-     *
-     * @param array $dados
-     *
-     * @return void
-     */
-    public function analisaCorStatus($dados)
-    {
-        foreach ($dados as $k => $v) {
-            /*
-             * Analisa Status Cor
-             */
-            switch ($v->status) {
-                case 0:
-                    $dados[$k]->corstatus = 'danger';
-                    break;
-                case 1:
-                    $dados[$k]->corstatus = 'warning';
-                    break;
-                case 2:
-                    $dados[$k]->corstatus = 'success ';
-                    break;
-                case 3:
-                    $dados[$k]->corstatus = 'primary';
-                    break;
-                case 4:
-                    $dados[$k]->corstatus = 'info';
-                    break;
-                case 5:
-                    $dados[$k]->corstatus = 'primary';
-                    break;
-                default:
-                    $dados[$k]->corstatus = 'primary';
-                    break;
-            }
-        }
-    }
-
-    public function LoadModels()
+    private function LoadModels()
     {
         $this->load->model('ChamadoModel', 'chamados');
         $this->load->model('ClienteModel', 'clientes');
         $this->load->model('TipoChamadoModel', 'tipoChamados');
     }
     /**
-     * Retorna Where para busca dos chamados da empresa ou do usuário
-     * De arcordo com a opção supervisor_helpdesk
-     *
-     * @return void
+     * Retorna Where para busca dos chamados     *
      */
-    private function getWherePermissao()
+    private function retornaPermissao(): string
     {
-        if (strtoupper($this->session->userdata('nomusu')) == 'ADMIN' or $this->session->userdata('supervisor_helpdesk') == 1) {
-            return 'p.id_chamado<>0';
+        if ($this->session->userdata('nomusu') == 'admin@admin.com.br') {
+            return 'id_chamado<>0';
         } else {
-            return 'p.id_chamado<>0 and p.id_usuario_helpdesk="' . $this->idusu . '"';
+            return 'id_chamado<>0 and id_usuario_helpdesk="' . $this->idusu . '"';
         }
     }
 }

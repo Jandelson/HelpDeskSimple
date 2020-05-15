@@ -406,12 +406,11 @@ $config['encryption_key'] = '';
 | except for 'cookie_prefix' and 'cookie_httponly', which are ignored here.
 |
 */
+$config['sess_driver'] = 'files';
+$config['sess_save_path'] = APPPATH . 'ci_sessions/';
 if (ENVIRONMENT !== 'production') {
-//    $config['sess_driver'] = 'redis';
-//    $config['sess_save_path'] = 'tcp://localhost:6379';
-} else {
     $config['sess_driver'] = 'files';
-    $config['sess_save_path'] = null;
+    $config['sess_save_path'] = APPPATH . 'ci_sessions/';
 }
 $config['sess_cookie_name'] = 'ci_session';
 $config['sess_expiration'] = 7200;

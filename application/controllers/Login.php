@@ -1,4 +1,5 @@
 <?php
+
 defined('BASEPATH') or exit('No direct script access allowed');
 
 class Login extends MY_Controller
@@ -11,18 +12,36 @@ class Login extends MY_Controller
     public function index()
     {
         $data['title'] = $this->title = 'HelpDesk';
+        $data['error'] = '';
 
-        if (!empty($_POST['cnpj']) and !empty($_POST['email'])) {
-            $this->session->set_userdata('cgc_cpf', $_POST['cnpj']);
-            $this->session->set_userdata('codusu', 0);
-            $this->session->set_userdata('nomusu', $_POST['email']);
-            $this->session->set_userdata('codemp', 0);
-            $this->session->set_userdata('userid', $_POST['cnpj'] . $_POST['email']);
-            $this->session->set_userdata('email', $_POST['email']);
-            $this->indexController();
-        } else {
-            $this->load->view('login/login', $data);
+        $this->form_validation->set_rules('cnpj', 'Cnpj', 'trim|required|min_length[11]');
+        $this->form_validation->set_rules('email', 'Email', 'trim|required|valid_email');
+        
+        $data['formErrors'] = null;
+
+        if ($this->form_validation->run() == false) {
+            $data['formErrors'] = validation_errors();
+            return $this->load->view('login/login', $data);
         }
+
+        $this->session->set_userdata('cgc_cpf', $_POST['cnpj']);
+        $this->session->set_userdata('nomusu', $_POST['email']);
+        $this->session->set_userdata('userid', $_POST['cnpj'] . $_POST['email']);
+        $this->session->set_userdata('email', $_POST['email']);
+        $this->session->set_userdata('idusu', $this->retornaIDU());
+        redirect('home');
+    }
+
+    /**
+     * Retorna IDU id unica dao usuário.
+     */
+    private function retornaIDU()
+    {
+        $identificacao = md5($this->session->userdata('cgc_cpf') . $this->session->userdata('email'));
+        if ($this->session->userdata('userid') <> 0) {
+            $identificacao = md5($this->session->userdata('cgc_cpf') . $this->session->userdata('userid'));
+        }
+        return $identificacao;
     }
 
     public function logout()

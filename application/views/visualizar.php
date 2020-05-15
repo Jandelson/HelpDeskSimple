@@ -8,7 +8,7 @@
                 Ticket #<?php echo $dados[0]->id_chamado;  echo '  (' . $dados[0]->titulo . ' ) '?>
             </a>
             <div class="text-right">
-            <a href="<?php echo base_url();?>" class="btn btn-primary btn-xs">Voltar</a>
+            <a href="<?php echo base_url('home');?>" class="btn btn-primary btn-xs">Voltar</a>
             <?php if ($dados[0]->status <> 2) { ?>
             <a href="<?php echo base_url('finalizar/' . $this->uri->segment(2)); ?>" class="btn btn-warning btn-xs">Finalizar</a>
             <?php } ?>

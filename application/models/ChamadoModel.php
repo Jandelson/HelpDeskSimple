@@ -6,7 +6,7 @@ class ChamadoModel extends CI_Model
 {
     public $id_chamado;
     public $where;
-    public $table = 'chamado';
+    public $table;
     /**
      * Consulta das pendencias.
      *
@@ -18,28 +18,28 @@ class ChamadoModel extends CI_Model
         $this->idusu = $idusu;
 
         if ($this->id_chamado != 0) {
-            $this->where = 'p.id_chamado=' . $this->id_chamado;
+            $this->where = 'chamado.id_chamado=' . $this->id_chamado;
         } else {
             $this->where = $where;
         }
 
         $query = $this->db
             ->select('
-                p.*,
-                otc.descricao descricao_tipo_chamado,
-                DATE_FORMAT(p.data_hora_criacao,"%d/%m/%Y %H:%i:%s") data_hora_criacao,
-                DATE_FORMAT(p.data_previsao,"%d/%m/%Y %H:%i:%s") data_previsao,
-                DATE_FORMAT(p.data_previsao_atendimento,"%d/%m/%Y %H:%i:%s") data_previsao_atendimento,
-                DATE_FORMAT(p.data_conclusao,"%d/%m/%Y") data_conclusao,
+                chamado.*,
+                tipo_chamado.descricao descricao_tipo_chamado,
+                DATE_FORMAT(chamado.data_hora_criacao,"%d/%m/%Y %H:%i:%s") data_hora_criacao,
+                DATE_FORMAT(chamado.data_previsao,"%d/%m/%Y %H:%i:%s") data_previsao,
+                DATE_FORMAT(chamado.data_previsao_atendimento,"%d/%m/%Y %H:%i:%s") data_previsao_atendimento,
+                DATE_FORMAT(chamado.data_conclusao,"%d/%m/%Y") data_conclusao,
                 u1.id usu,
                 u2.id res,
-                a.nome
+                cliente.nome
             ')
-            ->from($this->table . ' p')
-            ->join('usuario u1', 'u1.codigo=p.id_usuario', 'left')
-            ->join('usuario u2', 'u2.codigo=p.id_usuario_responsavel', 'left')
-            ->join('cliente a', 'a.id_cliente=p.id_cliente', 'left')
-            ->join('tipo_chamado otc', 'otc.id_tipo_chamado = p.id_chamado', 'left')
+            ->from($this->table)
+            ->join('usuario u1', 'u1.codigo=chamado.id_usuario', 'left')
+            ->join('usuario u2', 'u2.codigo=chamado.id_usuario_responsavel', 'left')
+            ->join('cliente', 'cliente.id_cliente=chamado.id_cliente', 'left')
+            ->join('tipo_chamado', 'tipo_chamado.id_tipo_chamado = chamado.id_chamado', 'left')
             ->where($this->where)
             ->limit($_limit, $_start)
             ->order_by('id_chamado', 'desc');
@@ -58,13 +58,13 @@ class ChamadoModel extends CI_Model
      */
     private function getChamadosIdResposavel($id_chamado)
     {
-        $this->where = 'p.id_chamado=' . $id_chamado;
+        $this->where = 'chamado.id_chamado=' . $id_chamado;
         $query = $this->db
             ->select('
-                p.id_usuario_responsavel
-                ,p.status
+                chamado.id_usuario_responsavel
+                ,chamado.status
             ')
-            ->from('chamado' . ' p')
+            ->from('chamado')
             ->where($this->where);
 
         $query = $this->db->get();
@@ -91,7 +91,7 @@ class ChamadoModel extends CI_Model
     }
 
     /**
-     * Retorno de Status da pendência.
+     * Retorno de Status da pendêncicliente.
      *
      * @param int $id_chamado
      */
@@ -100,31 +100,31 @@ class ChamadoModel extends CI_Model
         $this->id_chamado = $id_chamado;
 
         if ($this->id_chamado != 0) {
-            $this->where = 'p.id_chamado=' . $this->id_chamado;
+            $this->where = 'chamado.id_chamado=' . $this->id_chamado;
         } else {
             $this->where = $where;
         }
 
         $query = $this->db
-            ->select('p.id_chamado id, ot.descricao status')
-            ->from($this->table . ' p')
-            ->join('helpdesk_status ot', 'ot.id_helpdesk_status=p.status')
+            ->select('chamado.id_chamado id, ot.descricao status')
+            ->from($this->table)
+            ->join('helpdesk_status ot', 'ot.id_helpdesk_status=chamado.status')
             ->where($this->where);
 
         $query = $this->db->get();
 
-        $arr = $query->result();
+        $dadosStatus = $query->result();
 
         if ($this->id_chamado == 0) {
             $ret = [];
-            foreach ($arr as $k => $v) {
+            foreach ($dadosStatus as $k => $v) {
                 $ret[$v->id] = $v->status;
             }
-        } else {
-            $ret = $arr;
+
+            return $ret;
         }
 
-        return $ret;
+        return $dadosStatus;
     }
 
     /**
@@ -164,19 +164,7 @@ class ChamadoModel extends CI_Model
      */
     public function insertChamados($dados, $table = '')
     {
-        if (isset($dados['nome_arquivo'])) {
-            $nome_arquivo = $dados['nome_arquivo'];
-            $descricao_arquivo = $dados['descricao_arquivo'];
-            unset($dados['nome_arquivo']);
-            unset($dados['descricao_arquivo']);
-        }
-        if (!empty($table)) {
-            $this->table = $table;
-            /*
-             * Pega mensagem para enviar o recado
-             */
-            $msg = $dados['descricao'];
-        }
+        $this->table = $table;
 
         $this->db->insert($this->table, $dados);
         //Retorna do id após inserção
@@ -199,34 +187,50 @@ class ChamadoModel extends CI_Model
                 );
                 $this->db->query($sql);
             }
-            $dados_recado = [
-                'usuario' => $data['dados'][0]->id_usuario_responsavel,
-                'origem' => $this->config->config['usuario_recado'],
-                'recado' => 'Pendência Helpdesk: ' . '<a href="' . $this->config->config['link_chamado'] . '' . $this->id_chamado . '" target="_blank">
-                <u>' . $this->id_chamado . '</u>
-                </a>'
-                    . '<br>' . $this->session->userdata('nomusu') . ' : ' . $msg,
-                'lido' => 0,
-                'datarecado' => date('Y-m-d H:i:s'),
-            ];
-        }
-        /*
-         * Insert do Anexo
-         */
-        if (!empty($nome_arquivo)) {
-            $dados_anexo = [
-                'ligacao' => 4,
-                'id_ligacao' => $this->id_chamado,
-                'data_upload' => date('Y-m-d H:i:s'),
-                'id_usuario' => 1,
-                'nome' => $nome_arquivo,
-                'descricao' => $descricao_arquivo
-            ];
-            $this->db->insert('documentos', $dados_anexo);
         }
 
         return $this->id_chamado;
     }
+
+    /**
+     * analisa Cores dos status
+     *
+     * @param array $dados
+     *
+     * @return void
+     */
+    public function getCorStatus($dados)
+    {
+        foreach ($dados as $k => $v) {
+            /*
+             * Analisa Status Cor
+             */
+            switch ($v->status) {
+                case 1:
+                    $dados[$k]->corstatus = 'danger';
+                    break;
+                case 2:
+                    $dados[$k]->corstatus = 'success';
+                    break;
+                case 3:
+                    $dados[$k]->corstatus = 'warning ';
+                    break;
+                case 4:
+                    $dados[$k]->corstatus = 'primary';
+                    break;
+                case 5:
+                    $dados[$k]->corstatus = 'info';
+                    break;
+                case 6:
+                    $dados[$k]->corstatus = 'primary';
+                    break;
+                default:
+                    $dados[$k]->corstatus = 'primary';
+                    break;
+            }
+        }
+    }
+
     /**
      * Contador para paginação
      *

@@ -1,2 +1,3 @@
 # Não enviar para o git
-#/application/config/database.php
+/application/config/database.php
+/application/ci_sessions
